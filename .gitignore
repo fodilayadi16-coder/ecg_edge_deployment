@@ -1,4 +1,18 @@
-# Python bytecode
+# Python and environment
+venv/
+ENV/
+env/
+.venv/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Local env files
+.env
+
+# VSCode
+.vscode/# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class

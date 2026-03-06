@@ -41,8 +41,11 @@ async def get_api_key(header_key: str = Security(api_key_header)):
 async def lifespan(app: FastAPI):
     init_db()
     if not API_KEY:
-        raise RuntimeError(
-            "Missing required environment variable API_KEY. Set it in .env or the environment before starting the app."
+        import warnings
+
+        warnings.warn(
+            "Missing required environment variable API_KEY. The server will start, but requests requiring authentication will be rejected. Set API_KEY in .env or the environment before starting the app.",
+            UserWarning,
         )
     yield
 
