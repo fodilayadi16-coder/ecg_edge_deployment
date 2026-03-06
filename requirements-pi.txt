@@ -1,0 +1,4 @@
+# Raspberry Pi specific dependencies
+# Install `tflite-runtime` on the Pi matching your Python version and CPU architecture.
+# See: https://www.tensorflow.org/lite/guide/python
+tflite-runtime

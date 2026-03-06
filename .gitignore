@@ -1,0 +1,74 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+venv*/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+htmlcov/
+coverage.xml
+
+# mypy
+.mypy_cache/
+
+# IDE/editor folders
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs and databases
+*.log
+*.sqlite3
+*..db
+ecg_results.db
+
+# Environment / secrets
+.env
+.env.*
+secrets.json
+
+# Compiled files
+*.so
+*.pyd
+
+# Large model/data files (optionally track via Git LFS instead)
+model/*.tflite
+model/*.h5
+model/*.pt
+data/
+datasets/
+recordings/
+outputs/
+
+# Other
+*.pem
+*.key
