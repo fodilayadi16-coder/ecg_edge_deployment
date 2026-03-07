@@ -2,7 +2,8 @@
 
 from sqlmodel import SQLModel, Field
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, List
+from sqlalchemy import Column, JSON
 
 class Patient(SQLModel, table=True):
     # Validation: ID must be 3-20 chars, name cannot be empty
@@ -16,4 +17,8 @@ class ECGRecord(SQLModel, table=True):
     prediction: int
     confidence: float
     heart_rate: int
+    # Raw ADC samples (JSON array) and reconstructed voltage points for frontend plotting
+    adc: Optional[List[int]] = Field(default=None, sa_column=Column(JSON, nullable=True))
+    voltage: Optional[List[float]] = Field(default=None, sa_column=Column(JSON, nullable=True))
+
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone(timedelta(hours=1))))

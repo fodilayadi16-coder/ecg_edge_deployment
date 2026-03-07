@@ -1,4 +1,39 @@
 # Raspberry Pi specific dependencies
 # Install `tflite-runtime` on the Pi matching your Python version and CPU architecture.
 # See: https://www.tensorflow.org/lite/guide/python
+
 tflite-runtime
+
+# Core
+numpy
+pandas
+scipy
+
+# ML & DL
+scikit-learn
+imbalanced-learn
+
+# Visualization & Notebooks
+matplotlib
+seaborn
+jupyter
+
+# Signal Processing
+wfdb
+neurokit2
+
+# ESP32 specific dependencies
+pyserial
+
+# fastapi
+fastapi
+uvicorn[standard]
+
+# real-time streaming
+websockets
+
+#database
+sqlmodel
+
+#dotenv
+python-dotenv

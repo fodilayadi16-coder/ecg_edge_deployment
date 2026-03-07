@@ -83,11 +83,18 @@ async def _patient_producer(patient_id: str, full_name: str, age: int):
             raw_bpm = estimate_hr(hr_buffer_np, fs=SAMPLING_RATE)
             bpm = smooth_bpm(raw_bpm)
 
+            # Convert ADC counts to a reconstructed ECG voltage-like signal for storage and frontend plotting
+            # synthetic_ecg encodes adc = (ecg * 200) + 2048 so we reverse that here
+            voltage_points = ((window_np.astype(float) - 2048.0) / 200.0).round(4).tolist()
+            adc_samples = window_np.astype(int).tolist()
+
             new_record = ECGRecord(
                 patient_id=patient_id,
                 prediction=predicted_class,
                 confidence=confidence,
-                heart_rate=int(bpm)
+                heart_rate=int(bpm),
+                adc=adc_samples,
+                voltage=voltage_points
             )
 
             created_record = None
@@ -108,6 +115,8 @@ async def _patient_producer(patient_id: str, full_name: str, age: int):
                 "confidence": round(confidence, 4),
                 "heart_rate": int(bpm),
                 "timestamp": timestamp,
+                "voltage": voltage_points,
+                "adc": adc_samples,
                 "processing_time": f"{total_proc_time:.3f}s"
             }
 
