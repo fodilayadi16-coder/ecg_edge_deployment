@@ -2,11 +2,13 @@ import os
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, HTTPException, Security, Depends, status, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
+import asyncio
 
 from database.db import engine, init_db
 from database.models import Patient
-from database.crud import get_patient_history, create_patient, get_patient
+from database.crud import get_patient_history, create_patient, get_patient, get_patient_by_full_name
 
 from api.broadcast import add_connection, remove_connection
 
@@ -47,11 +49,54 @@ async def lifespan(app: FastAPI):
             "Missing required environment variable API_KEY. The server will start, but requests requiring authentication will be rejected. Set API_KEY in .env or the environment before starting the app.",
             UserWarning,
         )
+    # Install a small asyncio exception handler to suppress noisy
+    # ConnectionResetError tracebacks on Windows (WinError 10054) that
+    # occur when clients disconnect abruptly. We preserve the existing
+    # handler and restore it on shutdown.
+    loop = asyncio.get_event_loop()
+    prev_handler = loop.get_exception_handler()
+
+    def _exception_handler(loop, context):
+        exc = context.get("exception")
+        # Suppress 'An existing connection was forcibly closed by the remote host' on Windows
+        if isinstance(exc, ConnectionResetError) and getattr(exc, "winerror", None) == 10054:
+            return
+        if prev_handler:
+            return prev_handler(loop, context)
+        # fallback to default handling
+        loop.default_exception_handler(context)
+
+    loop.set_exception_handler(_exception_handler)
     yield
+    # restore previous handler on shutdown
+    try:
+        loop.set_exception_handler(prev_handler)
+    except Exception:
+        pass
 
 
 # Create the FastAPI app with the lifespan manager
 app = FastAPI(title="ECG Real-Time Monitor", lifespan=lifespan)
+
+# CORS: allow frontend origins during development so browsers can preflight requests
+_cors_origins = os.getenv("CORS_ORIGINS")
+if _cors_origins:
+    origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
+else:
+    origins = [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # -- Patient Registration Endpoint --
 
@@ -61,13 +106,17 @@ async def register_patient(patient: Patient, _: str = Depends(get_api_key)):
     Register a new patient.
     If patient already exists, return existing record.
     """
-    existing = get_patient(engine, patient.patient_id)
+    # Normalize user input to avoid duplicates due to casing/spacing differences.
+    patient.patient_id = patient.patient_id.strip()
+    patient.full_name = patient.full_name.strip()
 
-    if existing:
-        return {
-            "message": "Patient already exists",
-            "patient": existing
-        }
+    existing_by_id = get_patient(engine, patient.patient_id)
+    if existing_by_id:
+        raise HTTPException(status_code=409, detail="Patient already registered with this ID")
+
+    existing_by_name = get_patient_by_full_name(engine, patient.full_name)
+    if existing_by_name:
+        raise HTTPException(status_code=409, detail="Patient already registered with this full name")
 
     created = create_patient(engine, patient)
 
@@ -75,6 +124,19 @@ async def register_patient(patient: Patient, _: str = Depends(get_api_key)):
         "message": "Patient registered successfully",
         "patient": created
     }
+
+
+@app.get("/patients/by-name")
+async def fetch_patient_by_name(full_name: str, _: str = Depends(get_api_key)):
+    normalized_name = full_name.strip()
+    if not normalized_name:
+        raise HTTPException(status_code=400, detail="Full name is required")
+
+    patient = get_patient_by_full_name(engine, normalized_name)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not registered")
+
+    return patient
 
 # -- History Endpoint --
 
