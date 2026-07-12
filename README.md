@@ -1,6 +1,6 @@
 # ECG Edge Deployment
 
-Using synthetic ecg for testing the working of our system before moving to esp32 data acquisition from ecg sensor.
+Using synthetic ECG for testing the working of our system before moving to ESP32 data acquisition from AD8232 sensor.
 
 Project for running ECG inference at the edge and managing patient records.
 
